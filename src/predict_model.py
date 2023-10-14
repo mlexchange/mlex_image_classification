@@ -46,4 +46,3 @@ if __name__ == '__main__':
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     df_results.to_parquet(f'{args.output_dir}/results.parquet', engine='pyarrow')
-    logging.info("Prediction process completed")
