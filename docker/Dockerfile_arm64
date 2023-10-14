@@ -1,0 +1,14 @@
+FROM jupyter/tensorflow-notebook:latest
+
+COPY docker/requirements_arm64.txt requirements.txt
+USER root
+RUN apt-get update && sudo apt-get install -y --no-install-recommends \
+         tree \
+    python3-pip &&\
+    pip install --upgrade pip
+
+RUN pip install -r requirements.txt
+WORKDIR /app/work/
+COPY src/ src/
+
+CMD ["bash"]
