@@ -3,7 +3,7 @@ import argparse, json, logging, os
 import tensorflow as tf
 import tensorflow.keras.layers as layers
 
-from model_validation import TrainingParams, DataAugmentationParams
+from model_validation import TrainingParams, DataAugmentationParams, model_list
 from helper_utils import get_dataset, data_preprocessing
 from custom_callbacks import TrainCustomCallback
 
@@ -29,30 +29,21 @@ if __name__ == '__main__':
     val_pct = data_parameters.val_pct
     seed = data_parameters.seed
 
-    if image_flip.value is not None:
+    if image_flip.value is not None and rotation_angle is not None:
         data_augmentation = tf.keras.Sequential([
             layers.RandomFlip(image_flip.value, seed=seed),
             layers.RandomRotation(rotation_angle, seed=seed),
             ])
-    else:
+    elif image_flip.value is not None:
         data_augmentation = tf.keras.Sequential([
-        layers.RandomRotation(rotation_angle, seed=seed),
+            layers.RandomFlip(image_flip.value, seed=seed)
+            ])
+    elif rotation_angle is not None:
+        data_augmentation = tf.keras.Sequential([
+        layers.RandomRotation(rotation_angle, seed=seed)
         ])
-    
-    # Prepare data generators and create a tf.data pipeline of augmented images
-    dataset, classes = get_dataset(args.data_info, seed=seed, shuffle=True, event_id=args.event_id)
-
-    val_size = int(len(dataset)*val_pct/100)
-    train_size = len(dataset) - val_size
-    train_dataset = dataset.take(train_size)
-    val_dataset = dataset.skip(train_size)
-    
-    train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (224,224)), y))
-    val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (224,224)), y))
-
-    train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
-    val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
-    class_num = len(classes)
+    else:
+        data_augmentation = tf.keras.Sequential([])
 
     # Gather training parameters
     weights = train_parameters.weights.value
@@ -62,6 +53,22 @@ if __name__ == '__main__':
     learning_rate = train_parameters.learning_rate
     loss_func = train_parameters.loss_function.value
 
+    # Prepare data generators and create a tf.data pipeline of augmented images
+    dataset, classes = get_dataset(args.data_info, seed=seed, shuffle=True, event_id=args.event_id)
+
+    val_size = int(len(dataset)*val_pct/100)
+    train_size = len(dataset) - val_size
+    train_dataset = dataset.take(train_size)
+    val_dataset = dataset.skip(train_size)
+    target_size = model_list[train_parameters.nn_model.name]
+
+    train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size)), y))
+    val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size)), y))
+
+    train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
+    val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
+    class_num = len(classes)
+
     # Define optimizer
     opt_code = compile(f'tf.keras.optimizers.{optimizer}(learning_rate={learning_rate})', 
                        '<string>', 'eval')
@@ -69,8 +76,8 @@ if __name__ == '__main__':
     logging.info(f'weights: {weights}')
     if weights != 'None':
         # Load pretrained weights
-        model_description = f"tf.keras.applications.{nn_model}(include_top=False, input_shape=\(224,224,3\), \
-            weights='imagenet', input_tensor=None)"
+        model_description = f"tf.keras.applications.{nn_model}(include_top=False, \
+            input_shape=\({target_size},{target_size},3\), weights='imagenet', input_tensor=None)"
         model_code = compile(model_description, "<string>", 'eval')
         base_model = eval(model_code)
         # Adapt output of the model according to the number of classes

@@ -3,6 +3,23 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
+model_list = {
+    'xception' : 299,
+    'vgg16' : 224,
+    'vgg19' : 224,
+    'resnet101' : 224,
+    'resnet152' : 224,
+    'resnet50v2' : 224,
+    'resnet50': 224,
+    'resnet152v2' : 224,
+    'inceptionv3' : 299,
+    'densenet201' : 224,
+    'nasnetlarge' : 331,
+    'inceptionresnetv2' : 299,
+    'densenet169' : 224,
+}
+
+
 class NNModel(str, Enum):
     xception = 'Xception'
     vgg16 = 'VGG16'
@@ -62,9 +79,9 @@ class ImageFlip(str, Enum):
 
 
 class DataAugmentationParams(BaseModel):
-    rotation_angle: int = Field(description='rotation angle')
     image_flip: ImageFlip
     batch_size: int = Field(description='batch size')
+    rotation_angle: Optional[int] = Field(description='rotation angle')
     val_pct: Optional[int] = Field(description='validation percentage')
     shuffle: Optional[bool] = Field(description='shuffle data')
     seed: Optional[int] = Field(description='random seed', default=42)

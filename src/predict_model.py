@@ -5,7 +5,7 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-from model_validation import DataAugmentationParams
+from model_validation import DataAugmentationParams, model_list
 from helper_utils import get_dataset, data_preprocessing
 from custom_callbacks import PredictionCustomCallback
 
@@ -24,17 +24,20 @@ if __name__ == '__main__':
     batch_size = data_parameters.batch_size
     logging.info(tf.test.gpu_device_name())
 
+    # Start prediction process
+    loaded_model = load_model(args.model_dir+'/model.keras')
+    target_size = model_list[loaded_model._name]
+
     # Prepare data generators and create a tf.data pipeline of augmented images
     test_dataset, datasets_uris = get_dataset(args.data_info, shuffle=False)
     
-    test_generator = test_dataset.map(lambda x: data_preprocessing(x, (224,224)))
+    test_generator = test_dataset.map(lambda x: data_preprocessing(x, (target_size,target_size)))
     test_generator = test_generator.batch(batch_size)
     with open(args.model_dir+'/class_info.json', 'r') as json_file:
         classes = json.load(json_file)
     class_num = len(classes)
 
-    # Load model and start prediction process
-    loaded_model = load_model(args.model_dir+'/model.keras')
+    # Start prediction process    
     prob = loaded_model.predict(test_generator,
                                 verbose=0,
                                 callbacks=[PredictionCustomCallback(datasets_uris, classes)])
