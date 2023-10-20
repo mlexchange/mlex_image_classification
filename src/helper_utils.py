@@ -1,6 +1,5 @@
 import os
 
-import numpy as np
 import pandas as pd
 import requests
 import tensorflow as tf
