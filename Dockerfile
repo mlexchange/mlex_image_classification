@@ -1,6 +1,6 @@
 FROM jupyter/tensorflow-notebook:latest
 
-COPY docker/requirements.txt requirements.txt
+COPY requirements.txt requirements.txt
 USER root
 RUN apt-get update && sudo apt-get install -y --no-install-recommends \
          tree \
