@@ -11,7 +11,7 @@ logger.addHandler(handler)
 
 class TrainCustomCallback(tf.keras.callbacks.Callback):
     '''
-    Keras callback for model training.  Threads while keras functions are running
+    Keras callback for model training. Threads while keras functions are running
     so that you can see training progress
     '''
     def on_epoch_end(self, epoch, logs=None):
@@ -36,7 +36,7 @@ class TrainCustomCallback(tf.keras.callbacks.Callback):
 
 class PredictionCustomCallback(tf.keras.callbacks.Callback):
     '''
-    Keras callback for model prediction.  Threads while keras functions are running
+    Keras callback for model prediction. Threads while keras functions are running
     so that you can see evaluation progress
     '''
     def __init__(self, filenames=None, classes=None):

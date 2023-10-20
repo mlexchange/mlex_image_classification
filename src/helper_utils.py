@@ -11,12 +11,13 @@ SPLASH_CLIENT = 'http://splash:80/api/v0'
 
 def load_from_splash(uri_list, event_id):
     '''
-    This function queries labels from splash-ml.
+    This function loads existing labels from splash-ml
     Args:
-        uri_list:    URI of dataset (e.g. file path)
-        event_id:    Tagging event id in splash_ml
+        uri_list:       URI of dataset (e.g. file path)
+        event_id:       Tagging event id in splash_ml
     Returns:
-        splash_df:   Dataframe of labeled images (docker path)
+        labeled_uris:   List of labeled URIs
+        labels:         List of assigned labels
     '''
     url = f'{SPLASH_CLIENT}/datasets/search'
     params = {"page[offset]": 0, "page[limit]": len(uri_list)}
@@ -41,7 +42,7 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         event_id:       Tagging event id in splash_ml
         seed:           Seed for random number generation
     Returns:
-        TF dataset, classes or filenames
+        TF dataset, kwargs (classes or filenames)
     '''
     # Retrieve data set list
     data_info = pd.read_parquet(data, engine='pyarrow')
@@ -59,15 +60,15 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
                                                            num_classes = len(classes))
         num_imgs = len(labeled_uris)
         dataset = tf.data.Dataset.from_tensor_slices((labeled_uris, categorical_labels))
-        kwarg = classes
+        kwargs = classes
     else:
-        kwarg = uri_list.to_list()
+        kwargs = uri_list.to_list()
         dataset = tf.data.Dataset.from_tensor_slices(uri_list)
         num_imgs = len(uri_list)
     # Shuffle data
     if shuffle:
         dataset.shuffle(seed=seed, buffer_size=num_imgs)
-    return dataset, kwarg
+    return dataset, kwargs
 
 
 def data_preprocessing(file_path, target_shape):
