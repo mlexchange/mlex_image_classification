@@ -29,12 +29,12 @@ if __name__ == '__main__':
     val_pct = data_parameters.val_pct
     seed = data_parameters.seed
 
-    if image_flip.value is not None and rotation_angle is not None:
+    if image_flip.value != 'None' and rotation_angle is not None:
         data_augmentation = tf.keras.Sequential([
             layers.RandomFlip(image_flip.value, seed=seed),
             layers.RandomRotation(rotation_angle, seed=seed),
             ])
-    elif image_flip.value is not None:
+    elif image_flip.value != 'None':
         data_augmentation = tf.keras.Sequential([
             layers.RandomFlip(image_flip.value, seed=seed)
             ])
@@ -54,7 +54,10 @@ if __name__ == '__main__':
     loss_func = train_parameters.loss_function.value
 
     # Prepare data generators and create a tf.data pipeline of augmented images
-    dataset, classes = get_dataset(args.data_info, seed=seed, shuffle=True, event_id=args.event_id)
+    dataset, classes = get_dataset(args.data_info, 
+                                   seed=seed, 
+                                   shuffle=data_parameters.shuffle, 
+                                   event_id=args.event_id)
 
     val_size = int(len(dataset)*val_pct/100)
     train_size = len(dataset) - val_size
@@ -72,12 +75,12 @@ if __name__ == '__main__':
     # Define optimizer
     opt_code = compile(f'tf.keras.optimizers.{optimizer}(learning_rate={learning_rate})', 
                        '<string>', 'eval')
-    
+
     logging.info(f'weights: {weights}')
     if weights != 'None':
         # Load pretrained weights
         model_description = f"tf.keras.applications.{nn_model}(include_top=False, \
-            input_shape=\({target_size},{target_size},3\), weights='imagenet', input_tensor=None)"
+            input_shape=({target_size},{target_size},3), weights='imagenet', input_tensor=None)"
         model_code = compile(model_description, "<string>", 'eval')
         base_model = eval(model_code)
         # Adapt output of the model according to the number of classes
@@ -86,7 +89,9 @@ if __name__ == '__main__':
         x = layers.Dense(4096, activation="relu", name="fc1")(x)
         x = layers.Dense(4096, activation="relu", name="fc2")(x)
         predictions = layers.Dense(class_num, activation='softmax', name="predictions")(x)
-        model = tf.keras.models.Model(inputs=base_model.input, outputs=predictions)
+        model = tf.keras.models.Model(inputs=base_model.input,
+                                      outputs=predictions,
+                                      name=base_model._name)
     else:
         model_description = f"tf.keras.applications.{nn_model}(include_top=True, weights=None, \
                              input_tensor=None, classes={class_num})"
@@ -107,7 +112,7 @@ if __name__ == '__main__':
               verbose=0,
               callbacks=[TrainCustomCallback()],
               shuffle=data_parameters.shuffle)
-    
+
     # save model
     model.save(args.output_dir+'/model.keras')
     with open(args.output_dir+'/class_info.json', 'w') as json_file:
