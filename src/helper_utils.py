@@ -5,7 +5,7 @@ import requests
 import tensorflow as tf
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-SPLASH_CLIENT = 'http://splash:80/api/v0'
+SPLASH_URL = 'http://splash:80/api/v0'
 
 
 def load_from_splash(uri_list, event_id):
@@ -18,7 +18,7 @@ def load_from_splash(uri_list, event_id):
         labeled_uris:   List of labeled URIs
         labels:         List of assigned labels
     '''
-    url = f'{SPLASH_CLIENT}/datasets/search'
+    url = f'{SPLASH_URL}/datasets/search'
     params = {"page[offset]": 0, "page[limit]": len(uri_list)}
     data = {'uris': uri_list, 'event_id': event_id}
     datasets = requests.post(url, params=params, json=data).json()
