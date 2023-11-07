@@ -1,0 +1,231 @@
+{
+  "name": "TF_Image_Classification",
+  "version": "0.0.3",
+  "type": "supervised",
+  "user": "mlexchange team",
+  "uri": "ghcr.io/mlexchange/mlex_image_classification:main",
+  "application": ["mlcoach"],
+  "description": "Tensorflow neural networks for image classification",
+  "gui_parameters": [
+    {
+      "type": "slider",
+      "name": "rotation_angle",
+      "title": "Rotation Angle",
+      "param_key": "rotation_angle",
+      "min": 0,
+      "max": 360,
+      "value": 0,
+      "comp_group": "train_model"
+    },
+    {
+      "type": "radio",
+      "name": "image_flip",
+      "title": "Image Flip",
+      "param_key": "image_flip",
+      "value": "None",
+      "options":
+      [
+        {"label": "None", "value": "None"},
+        {"label": "Vertical", "value": "vertical"},
+        {"label": "Horizontal", "value": "horizontal"},
+        {"label": "Horizontal and Vertical", "value": "horizontal_and_vertical"}
+      ],
+      "comp_group": "train_model"
+    },
+    {
+      "type": "radio",
+      "name": "shuffle",
+      "title": "Shuffle Data",
+      "param_key": "shuffle",
+      "value": true,
+      "options": [
+        {
+          "label": "True",
+          "value": true
+        },
+        {
+          "label": "False",
+          "value": false
+        }
+      ],
+      "comp_group": "train_model"
+    },
+    {
+      "type": "slider",
+      "name": "batch_size",
+      "title": "Batch Size",
+      "param_key": "batch_size",
+      "min": 16,
+      "max": 128,
+      "step": 16,
+      "value": 32,
+      "comp_group": "train_model"
+    },
+    {
+      "type": "slider",
+      "name": "val_pct",
+      "title": "Validation Percentage",
+      "param_key": "val_pct",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "value": 20,
+      "marks": {
+        "0": "0",
+        "100": "100"
+      },
+      "comp_group": "train_model"
+    },
+    {
+      "type": "dropdown",
+      "name": "weights",
+      "title": "Weights",
+      "param_key": "weights",
+      "value": "None",
+      "options": [
+        {"label": "None", "value": "None"},
+        {"label": "imagenet", "value": "imagenet"}
+      ],
+      "comp_group": "train_model"
+    },
+    {
+      "type": "dropdown",
+      "name": "optimizer",
+      "title": "Optimizer",
+      "param_key": "optimizer",
+      "value": "Adam",
+      "options": [
+        {"label": "Adadelta", "value": "Adadelta"},
+        {"label": "Adagrad", "value": "Adagrad"},
+        {"label": "Adam", "value": "Adam"},
+        {"label": "Adamax", "value": "Adamax"},
+        {"label": "Ftrl", "value": "Ftrl"},
+        {"label": "Nadam", "value": "Nadam"},
+        {"label": "RMSprop", "value": "RMSprop"},
+        {"label": "SGD", "value": "SGD"}
+      ],
+      "comp_group": "train_model"
+    },
+    {
+      "type": "dropdown",
+      "name": "loss_function",
+      "title": "Loss Function",
+      "param_key": "loss_function",
+      "value": "categorical_crossentropy",
+      "options": [
+        {"label": "BinaryCrossentropy", "value": "binary_crossentropy"},
+        {"label": "BinaryFocalCrossentropy", "value": "binary_focal_crossentropy"},
+        {"label": "CategoricalCrossentropy", "value": "categorical_crossentropy"},
+        {"label": "CategoricalHinge", "value": "categorical_hinge"},
+        {"label": "CosineSimilarity", "value": "cosine_similarity"},
+        {"label": "Hinge", "value": "hinge"},
+        {"label": "Huber", "value": "huber"},
+        {"label": "LogCosh", "value": "log_cosh"},
+        {"label": "KullbackLeiblerDivergence", "value": "kullback_leibler_divergence"},
+        {"label": "MeanAbsoluteError", "value": "mean_absolute_error"},
+        {"label": "MeanAbsolutePercentageError", "value": "mean_absolute_percentage_error"},
+        {"label": "MeanSquaredError", "value": "mean_squared_error"},
+        {"label": "MeanSquaredLogarithmicError", "value": "mean_squared_logarithmic_error"},
+        {"label": "Poisson", "value": "poisson"},
+        {"label": "SparseCategoricalCrossentropy", "value": "sparse_categorical_crossentropy"},
+        {"label": "SquaredHinge", "value": "squared_hinge"}
+      ],
+      "comp_group": "train_model"
+    },
+    {
+      "type": "float",
+      "name": "learning_rate",
+      "title": "Learning Rate",
+      "param_key": "learning_rate",
+      "value": 0.001,
+      "comp_group": "train_model"
+    },
+    {
+      "type": "slider",
+      "name": "epochs",
+      "title": "Number of epoch",
+      "param_key": "epochs",
+      "min": 1,
+      "max": 1000,
+      "value": 30,
+      "comp_group": "train_model"
+    },
+    {
+      "type": "dropdown",
+      "name": "nn_model",
+      "title": "ML Model",
+      "param_key": "nn_model",
+      "value": "ResNet50",
+      "options": [
+        {"label": "VGG16", "value": "VGG16"},
+        {"label": "VGG19", "value": "VGG19"},
+        {"label": "ResNet101", "value": "ResNet101"},
+        {"label": "ResNet152", "value": "ResNet152"},
+        {"label": "ResNet50V2", "value": "ResNet50V2"},
+        {"label": "ResNet50", "value": "ResNet50"},
+        {"label": "ResNet152V2", "value": "ResNet152V2"},
+        {"label": "DenseNet201", "value": "DenseNet201"},
+        {"label": "NASNetLarge", "value": "NASNetLarge"},
+        {"label": "DenseNet169", "value": "DenseNet169"}
+      ],
+      "comp_group": "train_model"
+    },
+    {
+      "type": "int",
+      "name": "seed",
+      "title": "Seed",
+      "param_key": "seed",
+      "value": 0,
+      "comp_group": "train_model"
+    },
+    {
+      "type": "slider",
+      "name": "rotation_angle",
+      "title": "Rotation Angle",
+      "param_key": "rotation_angle",
+      "min": 0,
+      "max": 360,
+      "value": 0,
+      "comp_group": "prediction_model"
+    },
+    {
+      "type": "radio",
+      "name": "image_flip",
+      "title": "Image Flip",
+      "param_key": "image_flip",
+      "value": "None",
+      "options":
+      [
+        {"label": "None", "value": "None"},
+        {"label": "Vertical", "value": "vertical"},
+        {"label": "Horizontal", "value": "horizontal"},
+        {"label": "Horizontal and Vertical", "value": "horizontal_and_vertical"}
+      ],
+      "comp_group": "prediction_model"
+    },
+    {
+      "type": "slider",
+      "name": "batch_size",
+      "title": "Batch Size",
+      "param_key": "batch_size",
+      "min": 16,
+      "max": 128,
+      "step": 16,
+      "value": 32,
+      "comp_group": "prediction_model"
+    },
+    {
+      "type": "int",
+      "name": "seed",
+      "title": "Seed",
+      "param_key": "seed",
+      "value": 0,
+      "comp_group": "prediction_model"
+    }
+  ],
+  "cmd": ["python3 src/train_model.py","python3 src/predict_model.py"],
+  "reference": "https://www.tensorflow.org/api_docs/python/tf/keras/applications",
+  "content_type": "model",
+  "public": false,
+  "service_type": "backend"
+}
