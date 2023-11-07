@@ -62,7 +62,7 @@ if __name__ == '__main__':
                                        callbacks=[PredictionCustomCallback(datasets_uris, classes)])
 
     df_results = pd.DataFrame(prob, columns=classes)
-    df_results['f_vec'] = f_vec
+    df_results['f_vec'] = list(f_vec)
     df_results.index = datasets_uris
 
     # Create output directory if it does not exist
