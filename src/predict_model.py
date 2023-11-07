@@ -62,10 +62,14 @@ if __name__ == '__main__':
                                        callbacks=[PredictionCustomCallback(datasets_uris, classes)])
 
     df_results = pd.DataFrame(prob, columns=classes)
-    df_results['f_vec'] = list(f_vec)
     df_results.index = datasets_uris
+
+    df_f_vec = pd.DataFrame(f_vec)
+    df_f_vec.columns = df_f_vec.columns.astype(str)
+    df_f_vec.index = datasets_uris
 
     # Create output directory if it does not exist
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     df_results.to_parquet(f'{args.output_dir}/results.parquet', engine='pyarrow')
+    df_f_vec.to_parquet(f'{args.output_dir}/f_vectors.parquet', engine='pyarrow')
