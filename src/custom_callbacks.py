@@ -47,7 +47,7 @@ class PredictionCustomCallback(tf.keras.callbacks.Callback):
         logger.info('Prediction process started')
 
     def on_predict_batch_end(self, batch, logs=None):
-        out = logs['outputs']
+        out = logs['outputs'][0]
         batch_size = out.shape[0]
         if batch==0:
             msg = ['filename'] + self.classes
