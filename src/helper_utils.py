@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import requests
 import tensorflow as tf
+import tensorflow_io as tfio
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 SPLASH_URL = 'http://splash:80/api/v0'
@@ -41,7 +42,7 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         event_id:       Tagging event id in splash_ml
         seed:           Seed for random number generation
     Returns:
-        TF dataset, kwargs (classes or filenames)
+        TF dataset, kwargs (classes or filenames), tif (BOOL)
     '''
     # Retrieve data set list
     data_info = pd.read_parquet(data, engine='pyarrow')
@@ -49,6 +50,10 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         uri_list = data_info['local_uri']
     else:
         uri_list = data_info['uri']
+    if uri_list[0].split('.')[-1] in ['tif', 'tiff', 'TIF', 'TIFF']:
+        tif = True
+    else:
+        tif = False
     # Retrieve labels
     if event_id:
         labeled_uris, labels = load_from_splash(uri_list.tolist(), event_id)
@@ -67,10 +72,10 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
     # Shuffle data
     if shuffle:
         dataset.shuffle(seed=seed, buffer_size=num_imgs)
-    return dataset, kwargs
+    return dataset, kwargs, tif
 
 
-def data_preprocessing(file_path, target_shape):
+def data_preprocessing(file_path, target_shape, tif=True):
     '''
     Preprocessing function that loads data per batch
     Args:
@@ -80,11 +85,12 @@ def data_preprocessing(file_path, target_shape):
         image
     '''
     img = tf.io.read_file(file_path)
-    try:
+    if not tif:
         img = tf.io.decode_image(img, channels=3, expand_animations = False)
-    except:
-        img = tf.io.experimental.image.decode_tiff(img, expand_animations = False)
-        img = tf.io.experimental.color.rgba_to_rgb(img)
+    else:
+        img_tmp = tfio.experimental.image.decode_tiff(img)
+        r, g, b = img_tmp[:, :, 0], img_tmp[:, :, 1], img_tmp[:, :, 2]
+        img = tf.stack([r, g, b], axis=-1)
     img = tf.image.resize(img, tf.constant(target_shape))
     img = img / 255.
     return img

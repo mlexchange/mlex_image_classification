@@ -81,9 +81,9 @@ class ImageFlip(str, Enum):
 class DataAugmentationParams(BaseModel):
     image_flip: ImageFlip
     batch_size: int = Field(description='batch size')
-    rotation_angle: Optional[int] = Field(description='rotation angle')
-    val_pct: Optional[int] = Field(description='validation percentage')
-    shuffle: Optional[bool] = Field(description='shuffle data')
+    rotation_angle: Optional[int] = Field(description='rotation angle', default = None)
+    val_pct: Optional[int] = Field(description='validation percentage', default = None)
+    shuffle: Optional[bool] = Field(description='shuffle data', default = None)
     seed: Optional[int] = Field(description='random seed', default=42)
 
 
