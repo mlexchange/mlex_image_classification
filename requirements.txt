@@ -1,3 +1,4 @@
-pandas==2.1.1
-pyarrow==13.0.0
-pydantic==1.8.2
+pandas
+pyarrow
+pydantic
+tensorflow-io==0.34.0

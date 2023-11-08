@@ -1,4 +1,4 @@
-FROM tensorflow/tensorflow:latest-gpu
+FROM tensorflow/tensorflow:2.13.0-gpu
 
 COPY requirements.txt requirements.txt
 USER root
