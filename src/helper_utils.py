@@ -5,6 +5,8 @@ import requests
 import tensorflow as tf
 import tensorflow_io as tfio
 
+from tiled_dataloader import CustomTiledDataset
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 SPLASH_URL = 'http://splash:80/api/v0'
 
@@ -46,17 +48,17 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
     '''
     # Retrieve data set list
     data_info = pd.read_parquet(data, engine='pyarrow')
-    if 'local_uri' in data_info:
-        uri_list = data_info['local_uri']
-    else:
-        uri_list = data_info['uri']
-    if uri_list[0].split('.')[-1] in ['tif', 'tiff', 'TIF', 'TIFF']:
-        tif = True
-    else:
-        tif = False
     # Retrieve labels
     if event_id:
-        labeled_uris, labels = load_from_splash(uri_list.tolist(), event_id)
+        if 'local_uri' in data_info:
+            uri_list = data_info['local_uri']
+            splash_uri_list = data_info['uri']
+            splash_labeled_uris, labels = load_from_splash(splash_uri_list.tolist(), event_id)
+            labeled_uris = data_info[data_info['uri'].isin(splash_labeled_uris)]
+            labeled_uris = list(labeled_uris['local_uri'])
+        else:
+            uri_list = data_info['uri']
+            labeled_uris, labels = load_from_splash(uri_list.tolist(), event_id)
         classes = list(set(labels))
         df_labels = pd.DataFrame(labels).replace({class_name: label for label, class_name in 
                                                   enumerate(classes)})
@@ -66,9 +68,18 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         dataset = tf.data.Dataset.from_tensor_slices((labeled_uris, categorical_labels))
         kwargs = classes
     else:
+        uri_list = data_info['uri']
         kwargs = uri_list.to_list()
-        dataset = tf.data.Dataset.from_tensor_slices(uri_list)
-        num_imgs = len(uri_list)
+        if data_info['type'][0] == 'tiled':
+            dataset = CustomTiledDataset(uri_list, log=False)
+        else:
+            dataset = tf.data.Dataset.from_tensor_slices(uri_list)
+            num_imgs = len(uri_list)
+    # Check if data is in tif format
+    if uri_list[0].split('.')[-1] in ['tif', 'tiff', 'TIF', 'TIFF'] or data_info['type'][0] == 'tiled':
+        tif = True
+    else:
+        tif = False
     # Shuffle data
     if shuffle:
         dataset.shuffle(seed=seed, buffer_size=num_imgs)
