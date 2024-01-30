@@ -176,7 +176,7 @@ def data_preprocessing(data, target_shape, data_type):
     '''
     if data_type != 'tiled':
         img = tf.io.read_file(data)
-        if data_type == 'tif':
+        if data_type != 'tif':
             img = tf.io.decode_image(img, channels=3, expand_animations = False)
         else:
             img_tmp = tfio.experimental.image.decode_tiff(img)
@@ -184,6 +184,7 @@ def data_preprocessing(data, target_shape, data_type):
             img = tf.stack([r, g, b], axis=-1)
     else:
         img = tf.expand_dims(data, axis=-1)
+        img = tf.repeat(img, repeats=3, axis=-1)
     img = tf.image.resize(img, tf.constant(target_shape))
     img = img / 255.
     return img
