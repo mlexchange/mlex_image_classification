@@ -54,10 +54,10 @@ if __name__ == '__main__':
     loss_func = train_parameters.loss_function.value
 
     # Prepare data generators and create a tf.data pipeline of augmented images
-    dataset, classes, tif = get_dataset(args.data_info, 
-                                        seed=seed, 
-                                        shuffle=data_parameters.shuffle, 
-                                        event_id=args.event_id)
+    dataset, classes, data_type = get_dataset(args.data_info, 
+                                              seed=seed, 
+                                              shuffle=data_parameters.shuffle, 
+                                              event_id=args.event_id)
 
     val_size = int(len(dataset)*val_pct/100)
     train_size = len(dataset) - val_size
@@ -65,8 +65,8 @@ if __name__ == '__main__':
     val_dataset = dataset.skip(train_size)
     target_size = model_list[train_parameters.nn_model.name]
 
-    train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), tif), y))
-    val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), tif), y))
+    train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type), y))
+    val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type), y))
 
     train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
     val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))

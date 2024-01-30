@@ -114,7 +114,7 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         event_id:       Tagging event id in splash_ml
         seed:           Seed for random number generation
     Returns:
-        TF dataset, kwargs (classes or filenames), tif (BOOL)
+        TF dataset, kwargs (classes or filenames), data_type
     '''
     # Retrieve data set list
     data_info = pd.read_parquet(data, engine='pyarrow')
@@ -151,33 +151,39 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         else:
             dataset = tf.data.Dataset.from_tensor_slices(uri_list)
             num_imgs = len(uri_list)
-    # Check if data is in tif format
-    if uri_list[0].split('.')[-1] in ['tif', 'tiff', 'TIF', 'TIFF'] or data_info['type'][0] == 'tiled':
-        tif = True
+    # Check if data is in tif format or tiled
+    if data_info['type'][0] == 'tiled' and not event_id:
+        data_type = 'tiled'
+    elif uri_list[0].split('.')[-1] in ['tif', 'tiff', 'TIF', 'TIFF'] or data_info['type'][0] == 'tiled':
+        data_type = 'tif'
     else:
-        tif = False
+        data_type = 'non-tif'
     # Shuffle data
     if shuffle:
         dataset.shuffle(seed=seed, buffer_size=num_imgs)
-    return dataset, kwargs, tif
+    return dataset, kwargs, data_type
 
 
-def data_preprocessing(file_path, target_shape, tif=True):
+def data_preprocessing(data, target_shape, data_type):
     '''
     Preprocessing function that loads data per batch
     Args:
-        file_path:      Path to file
+        data:           Data to be preprocessed
         target_shape:   Target shape of data
+        data_type:      Type of data
     Returns:
         image
     '''
-    img = tf.io.read_file(file_path)
-    if not tif:
-        img = tf.io.decode_image(img, channels=3, expand_animations = False)
+    if data_type != 'tiled':
+        img = tf.io.read_file(data)
+        if data_type == 'tif':
+            img = tf.io.decode_image(img, channels=3, expand_animations = False)
+        else:
+            img_tmp = tfio.experimental.image.decode_tiff(img)
+            r, g, b = img_tmp[:, :, 0], img_tmp[:, :, 1], img_tmp[:, :, 2]
+            img = tf.stack([r, g, b], axis=-1)
     else:
-        img_tmp = tfio.experimental.image.decode_tiff(img)
-        r, g, b = img_tmp[:, :, 0], img_tmp[:, :, 1], img_tmp[:, :, 2]
-        img = tf.stack([r, g, b], axis=-1)
+        img = tf.expand_dims(data, axis=-1)
     img = tf.image.resize(img, tf.constant(target_shape))
     img = img / 255.
     return img
