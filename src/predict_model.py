@@ -48,7 +48,7 @@ if __name__ == '__main__':
     custom_model = CustomModel(loaded_model)    # Modify trained model to return prob and f_vec
 
     # Prepare data generators and create a tf.data pipeline of augmented images
-    test_dataset, datasets_uris, tif = get_dataset(args.data_info, shuffle=False, train=False)
+    test_dataset, datasets_uris, tif = get_dataset(args.data_info, shuffle=False)
     
     test_generator = test_dataset.map(lambda x: data_preprocessing(x, (target_size,target_size), tif))
     test_generator = test_generator.batch(batch_size)

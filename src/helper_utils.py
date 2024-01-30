@@ -8,7 +8,6 @@ import requests
 
 import tensorflow as tf
 import tensorflow_io as tfio
-import tensorflow_datasets as tfds
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 SPLASH_URL = 'http://splash:80/api/v0'
@@ -106,14 +105,13 @@ def gen(uri_list, log=False):
         yield image_tensor
 
 
-def get_dataset(data, shuffle=False, event_id = None, train=True, seed=42):
+def get_dataset(data, shuffle=False, event_id = None, seed=42):
     '''
     This function prepares the dataset to be used during training and/or prediction processes
     Input:
         data:           Path to parquet file with the list of data
         shuffle:        Bool indicating if the dataset should be shuffled
         event_id:       Tagging event id in splash_ml
-        train:          Bool indicating if the dataset is for training or prediction
         seed:           Seed for random number generation
     Returns:
         TF dataset, kwargs (classes or filenames), tif (BOOL)
@@ -122,6 +120,7 @@ def get_dataset(data, shuffle=False, event_id = None, train=True, seed=42):
     data_info = pd.read_parquet(data, engine='pyarrow')
     # Retrieve labels
     if event_id:
+        # Training
         if 'local_uri' in data_info:
             uri_list = data_info['local_uri']
             splash_uri_list = data_info['uri']
@@ -140,18 +139,15 @@ def get_dataset(data, shuffle=False, event_id = None, train=True, seed=42):
         dataset = tf.data.Dataset.from_tensor_slices((labeled_uris, categorical_labels))
         kwargs = classes
     else:
+        # Inference
         uri_list = data_info['uri']
         kwargs = uri_list.to_list()
         if data_info['type'][0] == 'tiled':
-            if train==True:
-                dataset_builder = CustomTiledDataset(uri_list, log=False)
-                dataset = dataset_builder.as_dataset(split=tfds.Split.TRAIN)
-            else:
-                dataset = tf.data.Dataset.from_generator(
-                    gen,
-                    args=(uri_list,),
-                    output_signature=tf.TensorSpec(shape=(None, None), dtype=tf.float32)
-                )
+            dataset = tf.data.Dataset.from_generator(
+                gen,
+                args=(uri_list,),
+                output_signature=tf.TensorSpec(shape=(None, None), dtype=tf.float32)
+            )
         else:
             dataset = tf.data.Dataset.from_tensor_slices(uri_list)
             num_imgs = len(uri_list)
