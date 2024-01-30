@@ -46,16 +46,5 @@ class PredictionCustomCallback(tf.keras.callbacks.Callback):
     def on_predict_begin(self, logs=None):
         logger.info('Prediction process started')
 
-    def on_predict_batch_end(self, batch, logs=None):
-        out = logs['outputs'][0]
-        batch_size = out.shape[0]
-        if batch==0:
-            msg = ['filename'] + self.classes
-            logger.info(','.join(msg))
-        filenames = self.filenames[batch*batch_size:(batch+1)*batch_size]
-        for row in range(batch_size):         # when batch>1
-            prob = np.char.mod('%f', out[row,:])
-            logger.info(f"{filenames[row]},{','.join(prob)}")
-
     def on_predict_end(self, logs=None):
         logger.info('Prediction process completed')
