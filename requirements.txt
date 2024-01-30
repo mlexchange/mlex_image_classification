@@ -1,4 +1,6 @@
 pandas
+pillow
 pyarrow
 pydantic
 tensorflow-io==0.34.0
+requests
