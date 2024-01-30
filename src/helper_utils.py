@@ -10,8 +10,6 @@ import tensorflow as tf
 import tensorflow_io as tfio
 import tensorflow_datasets as tfds
 
-from tiled_dataloader import CustomTiledDataset
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 SPLASH_URL = 'http://splash:80/api/v0'
 
