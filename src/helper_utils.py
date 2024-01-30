@@ -1,9 +1,14 @@
 import os
+import io
 
+import numpy as np
 import pandas as pd
+from PIL import Image
 import requests
+
 import tensorflow as tf
 import tensorflow_io as tfio
+import tensorflow_datasets as tfds
 
 from tiled_dataloader import CustomTiledDataset
 
@@ -35,13 +40,82 @@ def load_from_splash(uri_list, event_id):
     return labeled_uris, labels
 
 
-def get_dataset(data, shuffle=False, event_id = None, seed=42):
+def parse_tiled(uri, log=False):
+    '''
+    Parse function to load tiled data
+    Args:
+        uri:                URI from which data should be retrieved
+        log:                Bool indicating if data should be log transformed
+    Returns:
+        Image
+    '''
+    uri = uri.decode('utf-8')
+    tiled_uri, metadata = uri.split('&expected_shape=')
+    # Check if the data is in the expected shape
+    expected_shape= metadata.split('&dtype=')[0]
+    expected_shape = np.array(list(map(int, expected_shape.split('%2C'))))
+    if len(expected_shape) == 3 and expected_shape[0] in [1,3,4]:
+        expected_shape = expected_shape[[1,2,0]]
+    elif len(expected_shape) != 2 or expected_shape[-1] not in [1,3,4]:
+        raise RuntimeError(f"Not supported type of data. Tiled uri: {tiled_uri} and data dimension {expected_shape}")
+    # Get data from tiled URI
+    contents = get_tiled_response(tiled_uri, expected_shape, max_tries=5)
+    image = Image.open(io.BytesIO(contents)).convert("L")
+    if log:
+        image = np.log1p(np.array(image))
+        image = (((image - np.min(image)) / (np.max(image) - np.min(image)))* 255).astype(np.uint8)
+        image = Image.fromarray(image)
+    image = tf.cast(image, tf.float32) / 255.0
+    return image
+
+
+def get_tiled_response(tiled_uri, expected_shape, max_tries=5):
+    '''
+    Get response from tiled URI
+    Args:
+        tiled_uri:          Tiled URI from which data should be retrieved
+        expected_shape:     Expected shape of data
+        max_tries:          Maximum number of tries to retrieve data, defaults to 5
+    Returns:
+        Response content
+    '''
+    status_code = 502
+    trials = 0
+    while status_code != 200 and trials < max_tries:
+        if len(expected_shape) == 3:
+            response = requests.get(f'{tiled_uri},0,:,:&format=png')
+        else:
+            response = requests.get(f'{tiled_uri},:,:&format=png')
+        status_code = response.status_code
+        trials += 1
+    if status_code != 200:
+        raise Exception(f'Failed to retrieve data from {tiled_uri}')
+    return response.content
+
+
+def gen(uri_list, log=False):
+    '''
+    Generator function to load tiled data
+    Args:
+        uri_list:           List of URIs from which data should be retrieved
+        log:                Bool indicating if data should be log transformed
+    Returns:
+        Image tensor
+    '''
+    for uri in uri_list:
+        image = parse_tiled(uri, log)
+        image_tensor = tf.convert_to_tensor(np.array(image))
+        yield image_tensor
+
+
+def get_dataset(data, shuffle=False, event_id = None, train=True, seed=42):
     '''
     This function prepares the dataset to be used during training and/or prediction processes
     Input:
         data:           Path to parquet file with the list of data
         shuffle:        Bool indicating if the dataset should be shuffled
         event_id:       Tagging event id in splash_ml
+        train:          Bool indicating if the dataset is for training or prediction
         seed:           Seed for random number generation
     Returns:
         TF dataset, kwargs (classes or filenames), tif (BOOL)
@@ -71,7 +145,15 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         uri_list = data_info['uri']
         kwargs = uri_list.to_list()
         if data_info['type'][0] == 'tiled':
-            dataset = CustomTiledDataset(uri_list, log=False)
+            if train==True:
+                dataset_builder = CustomTiledDataset(uri_list, log=False)
+                dataset = dataset_builder.as_dataset(split=tfds.Split.TRAIN)
+            else:
+                dataset = tf.data.Dataset.from_generator(
+                    gen,
+                    args=(uri_list,),
+                    output_signature=tf.TensorSpec(shape=(None, None), dtype=tf.float32)
+                )
         else:
             dataset = tf.data.Dataset.from_tensor_slices(uri_list)
             num_imgs = len(uri_list)
