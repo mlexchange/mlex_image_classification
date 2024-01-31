@@ -189,7 +189,7 @@ def data_preprocessing(data, target_shape, data_type, log=False):
     img = tf.image.resize(img, tf.constant(target_shape))
     img = img / 255.
     if log:
-        img = tf.log1p(img)
-        img = (((img - tf.reduce_min(img)) / (tf.reduce_max(img) - tf.reduce_min(img))) * 255)
+        img = tf.math.log1p(img)
+        img = (((img - tf.math.reduce_min(img)) / (tf.math.reduce_max(img) - tf.math.reduce_min(img))) * 255)
         img = tf.cast(img, tf.uint8)
     return img
