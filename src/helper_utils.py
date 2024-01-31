@@ -164,13 +164,14 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
     return dataset, kwargs, data_type
 
 
-def data_preprocessing(data, target_shape, data_type):
+def data_preprocessing(data, target_shape, data_type, log=False):
     '''
     Preprocessing function that loads data per batch
     Args:
         data:           Data to be preprocessed
         target_shape:   Target shape of data
         data_type:      Type of data
+        log:            Bool indicating if data should be log transformed
     Returns:
         image
     '''
@@ -187,4 +188,8 @@ def data_preprocessing(data, target_shape, data_type):
         img = tf.repeat(img, repeats=3, axis=-1)
     img = tf.image.resize(img, tf.constant(target_shape))
     img = img / 255.
+    if log:
+        img = tf.log1p(img)
+        img = (((img - tf.reduce_min(img)) / (tf.reduce_max(img) - tf.reduce_min(img))) * 255)
+        img = tf.cast(img, tf.uint8)
     return img

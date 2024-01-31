@@ -85,6 +85,7 @@ class DataAugmentationParams(BaseModel):
     val_pct: Optional[int] = Field(description='validation percentage', default = None)
     shuffle: Optional[bool] = Field(description='shuffle data', default = None)
     seed: Optional[int] = Field(description='random seed', default=42)
+    log: Optional[bool] = Field(description='bool flag to log transform the data')
 
 
 class TrainingParams(DataAugmentationParams):

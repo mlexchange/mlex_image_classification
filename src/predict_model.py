@@ -50,7 +50,7 @@ if __name__ == '__main__':
     # Prepare data generators and create a tf.data pipeline of augmented images
     test_dataset, datasets_uris, data_type = get_dataset(args.data_info, shuffle=False)
     
-    test_generator = test_dataset.map(lambda x: data_preprocessing(x, (target_size,target_size), data_type))
+    test_generator = test_dataset.map(lambda x: data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log))
     test_generator = test_generator.batch(batch_size)
     with open(args.model_dir+'/class_info.json', 'r') as json_file:
         classes = json.load(json_file)

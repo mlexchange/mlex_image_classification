@@ -65,8 +65,8 @@ if __name__ == '__main__':
     val_dataset = dataset.skip(train_size)
     target_size = model_list[train_parameters.nn_model.name]
 
-    train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type), y))
-    val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type), y))
+    train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
+    val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
 
     train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
     val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
