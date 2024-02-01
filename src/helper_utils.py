@@ -164,7 +164,7 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
     return dataset, kwargs, data_type
 
 
-def data_preprocessing(data, target_shape, data_type, log=False):
+def data_preprocessing(data, target_shape, data_type, log=False, threshold=1e-6):
     '''
     Preprocessing function that loads data per batch
     Args:
@@ -189,7 +189,7 @@ def data_preprocessing(data, target_shape, data_type, log=False):
     img = tf.image.resize(img, tf.constant(target_shape))
     img = img / 255.
     if log:
-        img = tf.math.log1p(img)
+        img = tf.math.log(img+threshold)
         img = (((img - tf.math.reduce_min(img)) / (tf.math.reduce_max(img) - tf.math.reduce_min(img))) * 255)
         img = tf.cast(img, tf.uint8)
     return img
