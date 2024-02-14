@@ -130,12 +130,16 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         else:
             uri_list = data_info['uri']
             labeled_uris, labels = load_from_splash(uri_list.tolist(), event_id)
+        if shuffle:
+            np.random.permutation(seed)
+            indx = np.random.permutation(len(labeled_uris))
+            labeled_uris = [labeled_uris[i] for i in indx]
+            labels = [labels[i] for i in indx]
         classes = list(set(labels))
         df_labels = pd.DataFrame(labels).replace({class_name: label for label, class_name in 
-                                                  enumerate(classes)})
+                                                  enumerate(classes)})    
         categorical_labels = tf.keras.utils.to_categorical(df_labels.iloc[:, 0].tolist(),
                                                            num_classes = len(classes))
-        num_imgs = len(labeled_uris)
         dataset = tf.data.Dataset.from_tensor_slices((labeled_uris, categorical_labels))
         kwargs = classes
     else:
@@ -150,7 +154,6 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
             )
         else:
             dataset = tf.data.Dataset.from_tensor_slices(uri_list)
-            num_imgs = len(uri_list)
     # Check if data is in tif format or tiled
     if data_info['type'][0] == 'tiled' and not event_id:
         data_type = 'tiled'
@@ -158,9 +161,6 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         data_type = 'tif'
     else:
         data_type = 'non-tif'
-    # Shuffle data
-    if shuffle:
-        dataset = dataset.shuffle(seed=seed, buffer_size=num_imgs)
     return dataset, kwargs, data_type
 
 
