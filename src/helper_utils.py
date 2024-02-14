@@ -160,7 +160,7 @@ def get_dataset(data, shuffle=False, event_id = None, seed=42):
         data_type = 'non-tif'
     # Shuffle data
     if shuffle:
-        dataset.shuffle(seed=seed, buffer_size=num_imgs)
+        dataset = dataset.shuffle(seed=seed, buffer_size=num_imgs)
     return dataset, kwargs, data_type
 
 
