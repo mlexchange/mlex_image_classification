@@ -61,6 +61,8 @@ if __name__ == '__main__':
 
     val_size = int(len(dataset)*val_pct/100)
     train_size = len(dataset) - val_size
+    logging.info(f"Train size: {train_size}, Validation size: {val_size}")
+
     train_dataset = dataset.take(train_size)
     val_dataset = dataset.skip(train_size)
     target_size = model_list[train_parameters.nn_model.name]
