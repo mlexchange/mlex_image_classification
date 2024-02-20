@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # Preprocess input according to the model if weights are set to imagenet
     preprocess_name = model_list_preprocess[loaded_model._name]
     preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
-    predict_generator = predict_dataset.batch(batch_size).map(lambda x: (preprocess_input(x)))
+    predict_generator = predict_generator.batch(batch_size).map(lambda x: (preprocess_input(x)))
     
     with open(args.model_dir+'/class_info.json', 'r') as json_file:
         classes = json.load(json_file)
