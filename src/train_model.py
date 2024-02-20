@@ -70,8 +70,16 @@ if __name__ == '__main__':
     train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
     val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
 
-    train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
-    val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
+    # Preprocess input according to the model if weights are set to imagenet
+    if weights == 'imagenet':
+        preprocess_input_description = f"tf.keras.applications.{nn_model}.preprocess_input"
+        preprocess_input = compile(preprocess_input_description, "<string>", 'eval')
+        train_generator = train_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
+        val_generator = val_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
+    else:
+        train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
+        val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
+
     class_num = len(classes)
 
     # Define optimizer
@@ -93,7 +101,7 @@ if __name__ == '__main__':
         predictions = layers.Dense(class_num, activation='softmax', name="predictions")(x)
         model = tf.keras.models.Model(inputs=base_model.input,
                                       outputs=predictions,
-                                      name=base_model._name)
+                                      name=f"{base_model._name}_{weights}")
     else:
         model_description = f"tf.keras.applications.{nn_model}(include_top=True, weights=None, \
                              input_tensor=None, classes={class_num})"
