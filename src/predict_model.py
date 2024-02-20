@@ -5,7 +5,7 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-from model_validation import DataAugmentationParams, model_list
+from model_validation import DataAugmentationParams, model_list_size, model_list_preprocess
 from helper_utils import get_dataset, data_preprocessing
 from custom_callbacks import PredictionCustomCallback
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     # Load trained model and parameters
     loaded_model = load_model(args.model_dir+'/model.keras')
     model_name, *weights = loaded_model._name.split('_')
-    target_size = model_list[model_name]
+    target_size = model_list_size[model_name]
     custom_model = CustomModel(loaded_model)    # Modify trained model to return prob and f_vec
 
     # Prepare data generators and create a tf.data pipeline of augmented images
@@ -54,7 +54,8 @@ if __name__ == '__main__':
 
     # Preprocess input according to the model if weights are set to imagenet
     if weights == ['imagenet']:
-        preprocess_input = getattr(tf.keras.applications, model_name).preprocess_input
+        preprocess_name = model_list_preprocess[model_name]
+        preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
         predict_generator = predict_dataset.batch(batch_size).map(lambda x: (preprocess_input(x)))
     else:
         predict_generator = predict_generator.batch(batch_size)

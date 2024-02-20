@@ -3,7 +3,7 @@ import argparse, json, logging, os
 import tensorflow as tf
 import tensorflow.keras.layers as layers
 
-from model_validation import TrainingParams, DataAugmentationParams, model_list
+from model_validation import TrainingParams, DataAugmentationParams, model_list_size, model_list_preprocess
 from helper_utils import get_dataset, data_preprocessing
 from custom_callbacks import TrainCustomCallback
 
@@ -65,14 +65,15 @@ if __name__ == '__main__':
 
     train_dataset = dataset.take(train_size)
     val_dataset = dataset.skip(train_size)
-    target_size = model_list[train_parameters.nn_model.name]
+    target_size = model_list_size[nn_model]
 
     train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
     val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
 
     # Preprocess input according to the model if weights are set to imagenet
     if weights == 'imagenet':
-        preprocess_input = getattr(tf.keras.applications, nn_model).preprocess_input
+        preprocess_name = model_list_preprocess[nn_model]
+        preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
         train_generator = train_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
         val_generator = val_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
     else:

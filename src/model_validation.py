@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import Optional, List
 
 
-model_list = {
+model_list_size = {
     'xception' : 299,
     'vgg16' : 224,
     'vgg19' : 224,
@@ -17,6 +17,23 @@ model_list = {
     'nasnetlarge' : 331,
     'inceptionresnetv2' : 299,
     'densenet169' : 224,
+}
+
+
+model_list_preprocess = {
+    'xception' : 'xception',
+    'vgg16' : 'vgg16',
+    'vgg19' : 'vgg19',
+    'resnet101' : 'resnet',
+    'resnet152' : 'resnet',
+    'resnet50v2' : 'resnet_v2',
+    'resnet50': 'resnet',
+    'resnet152v2' : 'resnet_v2',
+    'inceptionv3' : 'inception_v3',
+    'densenet201' : 'densenet',
+    'nasnetlarge' : 'nasnet',
+    'inceptionresnetv2' : 'inception_resnet_v2',
+    'densenet169' : 'densenet',
 }
 
 
