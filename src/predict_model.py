@@ -44,8 +44,7 @@ if __name__ == '__main__':
 
     # Load trained model and parameters
     loaded_model = load_model(args.model_dir+'/model.keras')
-    model_name, *weights = loaded_model._name.split('_')
-    target_size = model_list_size[model_name]
+    target_size = model_list_size[loaded_model._name]
     custom_model = CustomModel(loaded_model)    # Modify trained model to return prob and f_vec
 
     # Prepare data generators and create a tf.data pipeline of augmented images
@@ -53,12 +52,9 @@ if __name__ == '__main__':
     predict_generator = predict_dataset.map(lambda x: data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log))
 
     # Preprocess input according to the model if weights are set to imagenet
-    if weights == ['imagenet']:
-        preprocess_name = model_list_preprocess[model_name]
-        preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
-        predict_generator = predict_dataset.batch(batch_size).map(lambda x: (preprocess_input(x)))
-    else:
-        predict_generator = predict_generator.batch(batch_size)
+    preprocess_name = model_list_preprocess[loaded_model._name]
+    preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
+    predict_generator = predict_dataset.batch(batch_size).map(lambda x: (preprocess_input(x)))
     
     with open(args.model_dir+'/class_info.json', 'r') as json_file:
         classes = json.load(json_file)

@@ -65,21 +65,18 @@ if __name__ == '__main__':
 
     train_dataset = dataset.take(train_size)
     val_dataset = dataset.skip(train_size)
-    target_size = model_list_size[nn_model]
+    target_size = model_list_size[train_parameters.nn_model.name]
 
     train_generator = train_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
     val_generator = val_dataset.map(lambda x, y: (data_preprocessing(x, (target_size,target_size), data_type, data_parameters.log), y))
 
-    # Preprocess input according to the model if weights are set to imagenet
-    if weights == 'imagenet':
-        preprocess_name = model_list_preprocess[nn_model]
-        preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
-        train_generator = train_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
-        val_generator = val_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
-    else:
-        train_generator = train_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
-        val_generator = val_generator.batch(batch_size).map(lambda x, y: (data_augmentation(x), y))
+    # Preprocess input according to the neural network
+    preprocess_name = model_list_preprocess[train_parameters.nn_model.name]
+    preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
+    train_generator = train_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
+    val_generator = val_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
 
+    # Define number of classes
     class_num = len(classes)
 
     # Define optimizer
@@ -101,7 +98,7 @@ if __name__ == '__main__':
         predictions = layers.Dense(class_num, activation='softmax', name="predictions")(x)
         model = tf.keras.models.Model(inputs=base_model.input,
                                       outputs=predictions,
-                                      name=f"{base_model._name}_{weights}")
+                                      name=base_model._name)
     else:
         model_description = f"tf.keras.applications.{nn_model}(include_top=True, weights=None, \
                              input_tensor=None, classes={class_num})"
