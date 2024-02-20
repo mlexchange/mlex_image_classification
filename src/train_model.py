@@ -72,8 +72,7 @@ if __name__ == '__main__':
 
     # Preprocess input according to the model if weights are set to imagenet
     if weights == 'imagenet':
-        preprocess_input_description = f"tf.keras.applications.{nn_model}.preprocess_input"
-        preprocess_input = compile(preprocess_input_description, "<string>", 'eval')
+        preprocess_input = getattr(tf.keras.applications, nn_model).preprocess_input
         train_generator = train_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
         val_generator = val_generator.batch(batch_size).map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
     else:

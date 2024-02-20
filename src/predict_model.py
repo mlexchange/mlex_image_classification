@@ -54,8 +54,7 @@ if __name__ == '__main__':
 
     # Preprocess input according to the model if weights are set to imagenet
     if weights == ['imagenet']:
-        preprocess_input_description = f"tf.keras.applications.{model_name}.preprocess_input"
-        preprocess_input = compile(preprocess_input_description, "<string>", 'eval')
+        preprocess_input = getattr(tf.keras.applications, model_name).preprocess_input
         predict_generator = predict_dataset.batch(batch_size).map(lambda x: (preprocess_input(x)))
     else:
         predict_generator = predict_generator.batch(batch_size)
