@@ -62,7 +62,7 @@ def parse_tiled(uri, log=False):
         image = np.log1p(np.array(image))
         image = (((image - np.min(image)) / (np.max(image) - np.min(image)))* 255).astype(np.uint8)
         image = Image.fromarray(image)
-    image = tf.cast(image, tf.float32) / 255.0
+    # image = tf.cast(image, tf.float32) / 255.0
     return image
 
 
