@@ -1,56 +1,56 @@
 from enum import Enum
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional
 
+from pydantic import BaseModel, Field
 
 model_list_size = {
-    'xception' : 299,
-    'vgg16' : 224,
-    'vgg19' : 224,
-    'resnet101' : 224,
-    'resnet152' : 224,
-    'resnet50v2' : 224,
-    'resnet50': 224,
-    'resnet152v2' : 224,
-    'inceptionv3' : 299,
-    'densenet201' : 224,
-    'nasnetlarge' : 331,
-    'inceptionresnetv2' : 299,
-    'densenet169' : 224,
+    "xception": 299,
+    "vgg16": 224,
+    "vgg19": 224,
+    "resnet101": 224,
+    "resnet152": 224,
+    "resnet50v2": 224,
+    "resnet50": 224,
+    "resnet152v2": 224,
+    "inceptionv3": 299,
+    "densenet201": 224,
+    "nasnetlarge": 331,
+    "inceptionresnetv2": 299,
+    "densenet169": 224,
 }
 
 
 model_list_preprocess = {
-    'xception' : 'xception',
-    'vgg16' : 'vgg16',
-    'vgg19' : 'vgg19',
-    'resnet101' : 'resnet',
-    'resnet152' : 'resnet',
-    'resnet50v2' : 'resnet_v2',
-    'resnet50': 'resnet',
-    'resnet152v2' : 'resnet_v2',
-    'inceptionv3' : 'inception_v3',
-    'densenet201' : 'densenet',
-    'nasnetlarge' : 'nasnet',
-    'inceptionresnetv2' : 'inception_resnet_v2',
-    'densenet169' : 'densenet',
+    "xception": "xception",
+    "vgg16": "vgg16",
+    "vgg19": "vgg19",
+    "resnet101": "resnet",
+    "resnet152": "resnet",
+    "resnet50v2": "resnet_v2",
+    "resnet50": "resnet",
+    "resnet152v2": "resnet_v2",
+    "inceptionv3": "inception_v3",
+    "densenet201": "densenet",
+    "nasnetlarge": "nasnet",
+    "inceptionresnetv2": "inception_resnet_v2",
+    "densenet169": "densenet",
 }
 
 
 class NNModel(str, Enum):
-    xception = 'Xception'
-    vgg16 = 'VGG16'
-    vgg19 = 'VGG19'
-    resnet101 = 'ResNet101'
-    resnet152 = 'ResNet152'
-    resnet50v2 = 'ResNet50V2'
-    resnet50 = 'ResNet50'
-    resnet152v2 = 'ResNet152V2'
-    inceptionv3 = 'InceptionV3'
-    densenet201 = 'DenseNet201'
-    nasnetlarge = 'NASNetLarge'
-    inceptionresnetv2 = 'InceptionResNetV2'
-    densenet169 = 'DenseNet169'
+    xception = "Xception"
+    vgg16 = "VGG16"
+    vgg19 = "VGG19"
+    resnet101 = "ResNet101"
+    resnet152 = "ResNet152"
+    resnet50v2 = "ResNet50V2"
+    resnet50 = "ResNet50"
+    resnet152v2 = "ResNet152V2"
+    inceptionv3 = "InceptionV3"
+    densenet201 = "DenseNet201"
+    nasnetlarge = "NASNetLarge"
+    inceptionresnetv2 = "InceptionResNetV2"
+    densenet169 = "DenseNet169"
 
 
 class Optimizer(str, Enum):
@@ -65,8 +65,8 @@ class Optimizer(str, Enum):
 
 
 class Weights(str, Enum):
-    none = 'None'
-    imagenet = 'imagenet'
+    none = "None"
+    imagenet = "imagenet"
 
 
 class LossFunction(str, Enum):
@@ -89,26 +89,26 @@ class LossFunction(str, Enum):
 
 
 class ImageFlip(str, Enum):
-    none = 'None'
-    vertical = 'vertical'
-    horizontal = 'horizontal'
-    horizontal_and_vertical = 'horizontal_and_vertical'
+    none = "None"
+    vertical = "vertical"
+    horizontal = "horizontal"
+    horizontal_and_vertical = "horizontal_and_vertical"
 
 
 class DataAugmentationParams(BaseModel):
     image_flip: ImageFlip
-    batch_size: int = Field(description='batch size')
-    rotation_angle: Optional[int] = Field(description='rotation angle', default = None)
-    val_pct: Optional[int] = Field(description='validation percentage', default = None)
-    shuffle: Optional[bool] = Field(description='shuffle data', default = None)
-    seed: Optional[int] = Field(description='random seed', default=42)
-    log: Optional[bool] = Field(description='bool flag to log transform the data')
+    batch_size: int = Field(description="batch size")
+    rotation_angle: Optional[int] = Field(description="rotation angle", default=None)
+    val_pct: Optional[int] = Field(description="validation percentage", default=None)
+    shuffle: Optional[bool] = Field(description="shuffle data", default=None)
+    seed: Optional[int] = Field(description="random seed", default=42)
+    log: Optional[bool] = Field(description="bool flag to log transform the data")
 
 
 class TrainingParams(DataAugmentationParams):
     weights: Weights
     optimizer: Optimizer
     loss_function: LossFunction
-    learning_rate: float = Field(description='learning rate')
-    epochs: int = Field(description='number of epochs')
+    learning_rate: float = Field(description="learning rate")
+    epochs: int = Field(description="number of epochs")
     nn_model: NNModel
