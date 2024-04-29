@@ -1,6 +1,10 @@
+h5py==3.9.0
 pandas
 pillow
 pyarrow
 pydantic
-tensorflow-io==0.34.0
+tensorflow==2.15.1
+tensorflow-io==0.36.0
+tensorflow_probability==0.22.1
+tiled[client]==0.1.0a107
 requests

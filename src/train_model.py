@@ -151,7 +151,7 @@ if __name__ == "__main__":
         validation_data=val_generator,
         epochs=epochs,
         verbose=0,
-        callbacks=[TrainCustomCallback()],
+        callbacks=[TrainCustomCallback(args.output_dir)],
         shuffle=data_parameters.shuffle,
     )
 
