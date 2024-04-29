@@ -1,4 +1,3 @@
-import io
 import os
 
 import numpy as np
@@ -6,7 +5,9 @@ import pandas as pd
 import requests
 import tensorflow as tf
 import tensorflow_io as tfio
+import tensorflow_probability as tfp
 from PIL import Image
+from tiled.client import from_uri
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 SPLASH_URL = "http://splash:80/api/v0"
@@ -36,76 +37,63 @@ def load_from_splash(uri_list, event_id):
     return labeled_uris, labels
 
 
-def parse_tiled(uri, log=False):
+def preprocess_image(image, log=False):
     """
-    Parse function to load tiled data
+    Preprocess image
     Args:
-        uri:                URI from which data should be retrieved
-        log:                Bool indicating if data should be log transformed
+        image:  Image to be preprocessed
+        log:    Bool indicating if data should be log transformed
     Returns:
         Image
     """
-    uri = uri.decode("utf-8")
-    tiled_uri, metadata = uri.split("&expected_shape=")
-    # Check if the data is in the expected shape
-    expected_shape = metadata.split("&dtype=")[0]
-    expected_shape = np.array(list(map(int, expected_shape.split("%2C"))))
-    if len(expected_shape) == 3 and expected_shape[0] in [1, 3, 4]:
-        expected_shape = expected_shape[[1, 2, 0]]
-    elif len(expected_shape) != 2 or expected_shape[-1] not in [1, 3, 4]:
-        raise RuntimeError(
-            f"Not supported type of data. Tiled uri: {tiled_uri} and data dimension {expected_shape}"
-        )
-    # Get data from tiled URI
-    contents = get_tiled_response(tiled_uri, expected_shape, max_tries=5)
-    image = Image.open(io.BytesIO(contents)).convert("L")
+    if image.dtype != np.uint8:
+        # Normalize according to percentiles 1-99
+        low = np.percentile(image.ravel(), 1)
+        high = np.percentile(image.ravel(), 99)
+        image = np.clip((image - low) / (high - low), 0, 1)
+        image = (image * 255).astype(np.uint8)  # Convert to uint8, 0-255
+
+    # Check number of channels
+    if len(image.shape) == 3:
+        if image.shape[0] == 3:
+            image = np.transpose(image, (1, 2, 0))
+        elif image.shape[0] == 1:
+            image = np.squeeze(image)
+        else:
+            raise ValueError("Not a valid image shape")
+
+    # Apply log transformation
     if log:
         image = np.log1p(np.array(image))
         image = (
             ((image - np.min(image)) / (np.max(image) - np.min(image))) * 255
         ).astype(np.uint8)
-        image = Image.fromarray(image)
+
+    # Convert to PIL image
+    image = Image.fromarray(image)
+    image = image.convert("L")
     # image = tf.cast(image, tf.float32) / 255.0
     return image
 
 
-def get_tiled_response(tiled_uri, expected_shape, max_tries=5):
-    """
-    Get response from tiled URI
-    Args:
-        tiled_uri:          Tiled URI from which data should be retrieved
-        expected_shape:     Expected shape of data
-        max_tries:          Maximum number of tries to retrieve data, defaults to 5
-    Returns:
-        Response content
-    """
-    status_code = 502
-    trials = 0
-    while status_code != 200 and trials < max_tries:
-        if len(expected_shape) == 3:
-            response = requests.get(f"{tiled_uri},0,:,:&format=png")
-        else:
-            response = requests.get(f"{tiled_uri},:,:&format=png")
-        status_code = response.status_code
-        trials += 1
-    if status_code != 200:
-        raise Exception(f"Failed to retrieve data from {tiled_uri}")
-    return response.content
-
-
-def gen(uri_list, log=False):
+def gen(root_uri, sub_uris, api_key=None, log=False):
     """
     Generator function to load tiled data
     Args:
-        uri_list:           List of URIs from which data should be retrieved
-        log:                Bool indicating if data should be log transformed
+        root_uri:       Root URI from which data should be retrieved
+        sub_uris:       List of sub URIs
+        api_key:        API key for tiled
+        log:            Bool indicating if data should be log transformed
     Returns:
         Image tensor
     """
-    for uri in uri_list:
-        image = parse_tiled(uri, log)
-        image_tensor = tf.convert_to_tensor(np.array(image))
-        yield image_tensor
+    tiled_client = from_uri(root_uri, api_key=api_key)
+    for sub_uri in sub_uris:
+        block_array = tiled_client[root_uri][sub_uri]
+        for i in range(block_array.shape[0]):
+            image = block_array[i,]
+            image_tensor = tf.convert_to_tensor(np.array(image))
+            yield image_tensor
 
 
 def get_dataset(data, shuffle=False, event_id=None, seed=42):
@@ -115,6 +103,7 @@ def get_dataset(data, shuffle=False, event_id=None, seed=42):
         data:           Path to parquet file with the list of data
         shuffle:        Bool indicating if the dataset should be shuffled
         event_id:       Tagging event id in splash_ml
+        log:            Bool indicating if data should be log transformed
         seed:           Seed for random number generation
     Returns:
         TF dataset, kwargs (classes or filenames), data_type
@@ -124,14 +113,10 @@ def get_dataset(data, shuffle=False, event_id=None, seed=42):
     # Retrieve labels
     if event_id:
         # Training
-        if "local_uri" in data_info:
-            uri_list = data_info["local_uri"]
-            splash_uri_list = data_info["uri"]
-            splash_labeled_uris, labels = load_from_splash(
-                splash_uri_list.tolist(), event_id
-            )
-            labeled_uris = data_info[data_info["uri"].isin(splash_labeled_uris)]
-            labeled_uris = list(labeled_uris["local_uri"])
+        if data_info["type"][0] == "tiled":
+            uri_list = data_info["uri"]
+            splash_uri_list = data_info["splash_uri"]
+            labeled_uris, labels = load_from_splash(splash_uri_list.tolist(), event_id)
         else:
             uri_list = data_info["uri"]
             labeled_uris, labels = load_from_splash(uri_list.tolist(), event_id)
@@ -156,7 +141,11 @@ def get_dataset(data, shuffle=False, event_id=None, seed=42):
         if data_info["type"][0] == "tiled":
             dataset = tf.data.Dataset.from_generator(
                 gen,
-                args=(uri_list,),
+                args=(
+                    data_info["root_uri"].tolist()[0],
+                    data_info["sub_uris"].tolist(),
+                    data_info["api_key"].tolist()[0],
+                ),
                 output_signature=tf.TensorSpec(shape=(None, None), dtype=tf.float32),
             )
         else:
@@ -174,7 +163,7 @@ def get_dataset(data, shuffle=False, event_id=None, seed=42):
     return dataset, kwargs, data_type
 
 
-def data_preprocessing(data, target_shape, data_type, log=False, threshold=1):
+def data_preprocessing(img, target_shape, data_type, log=False, threshold=1):
     """
     Preprocessing function that loads data per batch
     Args:
@@ -186,7 +175,7 @@ def data_preprocessing(data, target_shape, data_type, log=False, threshold=1):
         image
     """
     if data_type != "tiled":
-        img = tf.io.read_file(data)
+        img = tf.io.read_file(img)
         if data_type != "tif":
             img = tf.io.decode_image(img, channels=3, expand_animations=False)
         else:
@@ -194,9 +183,30 @@ def data_preprocessing(data, target_shape, data_type, log=False, threshold=1):
             r, g, b = img_tmp[:, :, 0], img_tmp[:, :, 1], img_tmp[:, :, 2]
             img = tf.stack([r, g, b], axis=-1)
     else:
-        img = tf.expand_dims(data, axis=-1)
-        img = tf.repeat(img, repeats=3, axis=-1)
+        # Normalize according to percentiles 1-99
+        if img.dtype != np.uint8:
+            img_flat = tf.reshape(img, [-1])
+            low = tfp.stats.percentile(img_flat, 1)
+            high = tfp.stats.percentile(img_flat, 99)
+
+            img = tf.clip_by_value((img - low) / (high - low), 0, 1)
+            img = tf.cast(img * 255, tf.uint8)
+
+        # Check number of channels
+        if len(img.shape) == 3 and img.shape[0] == 1:
+            img = tf.transpose(img, (1, 2, 0))
+            img = tf.repeat(img, repeats=3, axis=-1)
+        elif len(img.shape) == 3 and img.shape[0] == 3:
+            img = tf.transpose(img, (1, 2, 0))
+        elif len(img.shape) == 2:
+            img = tf.expand_dims(img, axis=-1)
+            img = tf.repeat(img, repeats=3, axis=-1)
+        else:
+            raise ValueError("Not a valid image shape")
+
     img = tf.image.resize(img, tf.constant(target_shape))
+
+    # Apply log transformation
     if log:
         img = tf.math.log(img + threshold)
         img = (

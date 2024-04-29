@@ -1,6 +1,6 @@
 {
   "name": "TF_Image_Classification",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "supervised",
   "user": "mlexchange team",
   "uri": "ghcr.io/mlexchange/mlex_image_classification:main",
@@ -147,7 +147,12 @@
       "param_key": "epochs",
       "min": 1,
       "max": 1000,
+      "step": 1,
       "value": 30,
+      "marks": {
+        "1": "1",
+        "1000": "1000"
+      },
       "comp_group": "train_model"
     },
     {
