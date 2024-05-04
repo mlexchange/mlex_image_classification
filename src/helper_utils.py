@@ -72,28 +72,29 @@ def preprocess_image(image, log=False):
     # Convert to PIL image
     image = Image.fromarray(image)
     image = image.convert("L")
-    # image = tf.cast(image, tf.float32) / 255.0
     return image
 
 
-def gen(root_uri, sub_uris, api_key=None, log=False):
+def gen(root_uri, sub_uris, api_key=None):
     """
     Generator function to load tiled data
     Args:
         root_uri:       Root URI from which data should be retrieved
         sub_uris:       List of sub URIs
         api_key:        API key for tiled
-        log:            Bool indicating if data should be log transformed
     Returns:
         Image tensor
     """
-    tiled_client = from_uri(root_uri, api_key=api_key)
+    tiled_client = from_uri(root_uri.decode("ascii"), api_key=api_key)
     for sub_uri in sub_uris:
-        block_array = tiled_client[root_uri][sub_uri]
-        for i in range(block_array.shape[0]):
-            image = block_array[i,]
-            image_tensor = tf.convert_to_tensor(np.array(image))
-            yield image_tensor
+        block_array = tiled_client[sub_uri.decode("ascii")]
+        if len(block_array.shape) > 2:
+            for i in range(block_array.shape[0]):
+                image = block_array[i,]
+                image_tensor = tf.convert_to_tensor(np.array(image))
+                yield image_tensor
+        else:
+            yield block_array[:]
 
 
 def get_dataset(data, shuffle=False, event_id=None, seed=42):
@@ -116,7 +117,8 @@ def get_dataset(data, shuffle=False, event_id=None, seed=42):
         if data_info["type"][0] == "tiled":
             uri_list = data_info["uri"]
             splash_uri_list = data_info["splash_uri"]
-            labeled_uris, labels = load_from_splash(splash_uri_list.tolist(), event_id)
+            _, labels = load_from_splash(splash_uri_list.tolist(), event_id)
+            labeled_uris = uri_list.tolist()
         else:
             uri_list = data_info["uri"]
             labeled_uris, labels = load_from_splash(uri_list.tolist(), event_id)
@@ -136,20 +138,38 @@ def get_dataset(data, shuffle=False, event_id=None, seed=42):
         kwargs = classes
     else:
         # Inference
-        uri_list = data_info["uri"]
-        kwargs = uri_list.to_list()
         if data_info["type"][0] == "tiled":
-            dataset = tf.data.Dataset.from_generator(
-                gen,
-                args=(
-                    data_info["root_uri"].tolist()[0],
-                    data_info["sub_uris"].tolist(),
-                    data_info["api_key"].tolist()[0],
-                ),
-                output_signature=tf.TensorSpec(shape=(None, None), dtype=tf.float32),
-            )
+            tiled_root_uri = data_info["root_uri"].tolist()[0]
+            tiled_sub_uris = data_info["sub_uris"].tolist()
+            tiled_key = data_info["api_key"].tolist()[0]
+            if tiled_key:
+                dataset = tf.data.Dataset.from_generator(
+                    gen,
+                    args=(
+                        tiled_root_uri,
+                        tiled_sub_uris,
+                        tiled_key,
+                    ),
+                    output_signature=tf.TensorSpec(
+                        shape=(None, None), dtype=tf.float32
+                    ),
+                )
+            else:
+                dataset = tf.data.Dataset.from_generator(
+                    gen,
+                    args=(
+                        tiled_root_uri,
+                        tiled_sub_uris,
+                    ),
+                    output_signature=tf.TensorSpec(
+                        shape=(None, None), dtype=tf.float32
+                    ),
+                )
+            kwargs = None
         else:
             dataset = tf.data.Dataset.from_tensor_slices(uri_list)
+            uri_list = data_info["uri"]
+            kwargs = uri_list.to_list()
     # Check if data is in tif format or tiled
     if data_info["type"][0] == "tiled" and not event_id:
         data_type = "tiled"
