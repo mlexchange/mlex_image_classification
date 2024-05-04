@@ -57,9 +57,7 @@ if __name__ == "__main__":
     )  # Modify trained model to return prob and f_vec
 
     # Prepare data generators and create a tf.data pipeline of augmented images
-    predict_dataset, datasets_uris, data_type = get_dataset(
-        args.data_info, shuffle=False
-    )
+    predict_dataset, _, data_type = get_dataset(args.data_info, shuffle=False)
     predict_generator = predict_dataset.map(
         lambda x: data_preprocessing(
             x, (target_size, target_size), data_type, data_parameters.log
@@ -81,15 +79,13 @@ if __name__ == "__main__":
     prob, f_vec = custom_model.predict(
         predict_generator,
         verbose=0,
-        callbacks=[PredictionCustomCallback(datasets_uris, classes)],
+        callbacks=[PredictionCustomCallback(classes=classes)],
     )
 
     df_results = pd.DataFrame(prob, columns=classes)
-    df_results.index = datasets_uris
 
     df_f_vec = pd.DataFrame(f_vec)
     df_f_vec.columns = df_f_vec.columns.astype(str)
-    df_f_vec.index = datasets_uris
 
     # Create output directory if it does not exist
     output_dir = Path(args.output_dir)
