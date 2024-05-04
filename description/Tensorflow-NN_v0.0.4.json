@@ -1,9 +1,9 @@
 {
-  "name": "TF_Image_Classification",
+  "name": "TF_Image_Classification_v0.0.4",
   "version": "0.0.4",
   "type": "supervised",
   "user": "mlexchange team",
-  "uri": "ghcr.io/mlexchange/mlex_image_classification:main",
+  "uri": "ghcr.io/mlexchange/mlex_image_classification_v0.0.4:main",
   "application": ["mlcoach"],
   "description": "Tensorflow neural networks for image classification",
   "gui_parameters": [
