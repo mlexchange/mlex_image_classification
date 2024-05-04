@@ -3,8 +3,7 @@ pandas
 pillow
 pyarrow
 pydantic
-tensorflow==2.15.1
-tensorflow-io==0.36.0
-tensorflow_probability==0.22.1
+tensorflow-io[tensorflow]==0.32.0
+tensorflow_probability==0.20.1
 tiled[client]==0.1.0a107
 requests
