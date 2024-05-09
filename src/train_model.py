@@ -99,9 +99,16 @@ if __name__ == "__main__":
     # Preprocess input according to the neural network
     preprocess_name = model_list_preprocess[train_parameters.nn_model.name]
     preprocess_input = getattr(tf.keras.applications, preprocess_name).preprocess_input
-    train_generator = train_generator.batch(batch_size).map(
-        lambda x, y: (preprocess_input(data_augmentation(x)), y)
-    )
+    if data_parameters.shuffle:
+        train_generator = (
+            train_generator.shuffle(len(train_generator))
+            .batch(batch_size)
+            .map(lambda x, y: (preprocess_input(data_augmentation(x)), y))
+        )
+    else:
+        train_generator = train_generator.batch(batch_size).map(
+            lambda x, y: (preprocess_input(data_augmentation(x)), y)
+        )
     val_generator = val_generator.batch(batch_size).map(
         lambda x, y: (preprocess_input(data_augmentation(x)), y)
     )
