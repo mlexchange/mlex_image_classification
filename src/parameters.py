@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -95,20 +95,52 @@ class ImageFlip(str, Enum):
     horizontal_and_vertical = "horizontal_and_vertical"
 
 
-class DataAugmentationParams(BaseModel):
+class DataType(str, Enum):
+    tiled = "tiled"
+    file = "file"
+
+
+class IOParameters(BaseModel):
+    data_uris: List[str] = Field(description="directory containing the data")
+    data_type: DataType = Field(description="type of data")
+    root_uri: str = Field(description="root URI containing the data")
+    uid_save: str = Field(description="uid to save models, metrics and etc")
+    uid_retrieve: Optional[str] = Field(
+        description="optional, uid to retrieve models for inference"
+    )
+    data_tiled_api_key: Optional[str] = Field(description="API key for data tiled")
+    labels_tiled_uri: Optional[str] = Field(description="labels tiled uri")
+    labels_tiled_api_key: Optional[str] = Field(description="labels tiled api key")
+    results_tiled_uri: str = Field(description="tiled uri to save results to")
+    results_tiled_api_key: Optional[str] = Field(description="tiled api key")
+    models_dir: str = Field(description="directory containing the model")
+    results_dir: str = Field(description="directory to save the results")
+    mask_tiled_uri: Optional[str] = Field(description="mask tiled uri")
+    mask_tiled_api_key: Optional[str] = Field(
+        description="detector tiled api key", default=None
+    )
+
+
+class PreProcessingParameters(BaseModel):
     image_flip: ImageFlip
-    batch_size: int = Field(description="batch size")
     rotation_angle: Optional[int] = Field(description="rotation angle", default=None)
-    val_pct: Optional[int] = Field(description="validation percentage", default=None)
-    shuffle: Optional[bool] = Field(description="shuffle data", default=None)
-    seed: Optional[int] = Field(description="random seed", default=42)
     log: Optional[bool] = Field(description="bool flag to log transform the data")
+    low_percentile: Optional[float] = Field(description="low percentile")
+    high_percentile: Optional[float] = Field(description="high percentile")
 
 
-class TrainingParams(DataAugmentationParams):
+class TrainingParameters(PreProcessingParameters):
+    nn_model: NNModel
     weights: Weights
     optimizer: Optimizer
     loss_function: LossFunction
     learning_rate: float = Field(description="learning rate")
     epochs: int = Field(description="number of epochs")
-    nn_model: NNModel
+    batch_size: int = Field(description="batch size")
+    val_pct: Optional[int] = Field(description="validation percentage", default=None)
+    shuffle: Optional[bool] = Field(description="shuffle data", default=None)
+    seed: Optional[int] = Field(description="random seed", default=42)
+
+
+class InferenceParameters(PreProcessingParameters):
+    batch_size: int = Field(description="batch size")
