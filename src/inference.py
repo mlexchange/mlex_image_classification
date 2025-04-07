@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 
 import pandas as pd
 import tensorflow as tf
@@ -80,9 +81,6 @@ if __name__ == "__main__":
         io_parameters.data_type,
         data_tiled_api_key=io_parameters.data_tiled_api_key,
         shuffle=False,
-        mask_type=io_parameters.mask_type,
-        mask_uri=io_parameters.mask_uri,
-        mask_tiled_api_key=io_parameters.mask_tiled_api_key,
     )
 
     mask = get_mask(
@@ -92,7 +90,7 @@ if __name__ == "__main__":
 
     if io_parameters.data_type == "tiled":
         predict_generator = predict_dataset.map(
-            lambda x, y: (
+            lambda x: (
                 tiled_data_preprocessing(
                     x,
                     (target_size, target_size),
@@ -100,13 +98,12 @@ if __name__ == "__main__":
                     inference_parameters.low_percentile,
                     inference_parameters.high_percentile,
                     mask,
-                ),
-                y,
+                )
             )
         )
     else:
         predict_generator = predict_dataset.map(
-            lambda x, y: (
+            lambda x: (
                 file_data_preprocessing(
                     x,
                     (target_size, target_size),
@@ -115,8 +112,7 @@ if __name__ == "__main__":
                     inference_parameters.low_percentile,
                     inference_parameters.high_percentile,
                     mask,
-                ),
-                y,
+                )
             )
         )
 
@@ -146,17 +142,18 @@ if __name__ == "__main__":
 
     # Create output directory if it does not exist
     output_dir = f"{io_parameters.results_dir}/{io_parameters.uid_save}"
-    output_dir.mkdir(parents=True, exist_ok=True)
-    df_results.to_parquet(f"{args.output_dir}/results.parquet", engine="pyarrow")
-    df_f_vec.to_parquet(f"{args.output_dir}/f_vectors.parquet", engine="pyarrow")
+    output_dir_path = Path(output_dir)
+    output_dir_path.mkdir(parents=True, exist_ok=True)
+    df_results.to_parquet(f"{output_dir}/results.parquet", engine="pyarrow")
+    df_f_vec.to_parquet(f"{output_dir}/f_vectors.parquet", engine="pyarrow")
     logger.info(f"Results written to {output_dir}")
 
     # Write results to Tiled
     write_results(
         df_f_vec,
+        df_results,
         io_parameters,
         f"{output_dir}/f_vectors.parquet",
-        df_results,
         f"{output_dir}/results.parquet",
         parameters,
     )
