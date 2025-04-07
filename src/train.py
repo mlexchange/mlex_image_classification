@@ -223,9 +223,10 @@ if __name__ == "__main__":
     # Print model summary
     model.summary()
 
-    results_dir = f"{io_parameters.results_dir}/{io_parameters.uid_save}"
+    models_dir = io_parameters.models_dir
+    model_dir = f"{models_dir}/{io_parameters.uid_save}"
 
-    live = Live(dir=f"{results_dir}/dvclive", dvcyaml=False)
+    live = Live(dir=f"{model_dir}/dvclive", dvcyaml=False)
 
     # fit model while also keeping track of data for dash plots
     history = model.fit(
@@ -234,21 +235,21 @@ if __name__ == "__main__":
         epochs=epochs,
         verbose=1,
         steps_per_epoch=train_size // batch_size,
-        callbacks=[DVCLiveCallback(live=live), TrainCustomCallback(results_dir)],
+        callbacks=[DVCLiveCallback(live=live), TrainCustomCallback(model_dir)],
         shuffle=train_parameters.shuffle,
     )
 
     # Save model
-    model_path = f"{results_dir}/model.keras"
+    model_path = f"{model_dir}/model.keras"
     model.save(model_path)
 
     # Save class metadata
-    class_info_path = f"{results_dir}/class_info.json"
+    class_info_path = f"{model_dir}/class_info.json"
     with open(class_info_path, "w") as json_file:
         json.dump(classes, json_file)
 
     # Save training history
-    history_path = f"{results_dir}/history.json"
+    history_path = f"{model_dir}/history.json"
     with open(history_path, "w") as json_file:
         json.dump(history.history, json_file)
 
